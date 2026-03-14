@@ -12,7 +12,7 @@ public class RoleEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true, columnDefinition = "TEXT")
+    @Column(nullable = false, unique = true, columnDefinition = "TEXT") //
     private enums name;
 
     private String description;
