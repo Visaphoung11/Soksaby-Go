@@ -1,6 +1,7 @@
 package com.smart.service.config;
 
 import com.smart.service.filter.JwtAuthenticationFilter;
+import com.smart.service.security.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -25,40 +26,45 @@ public class SecurityConfiguration {
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http.csrf(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(request -> request
-                        // 1. SPECIFIC Public Endpoints (No wildcards for sensitive areas)
                         .requestMatchers(
                                 "/api/v1/auth-service/register",
                                 "/api/v1/auth-service/authenticate",
-                                "/instances",
+                                "/oauth2/**",
+                                "/login/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-//                                "/api/v1/categories",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        .anyRequest().authenticated()
+                )
 
-                        .requestMatchers("/api/v1/auth-service/assign-role").authenticated()
-
-                        // 3. Catch-all for everything else
-                        .anyRequest().authenticated())
+                // enable OAuth2 login
+                .oauth2Login(oauth -> oauth
+                        .successHandler(oAuth2SuccessHandler) // your handler
+                )
 
                 .sessionManagement(manager -> manager
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+
                 .authenticationProvider(authenticationProvider)
+
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                // This is where the injection so here
+
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 );
+
         return http.build();
     }
 

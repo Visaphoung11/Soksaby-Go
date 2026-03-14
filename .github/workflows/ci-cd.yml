@@ -30,6 +30,8 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           EXPIRATION: ${{ secrets.EXPIRATION }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           # This disables the Docker Compose support during tests to avoid errors and staff
           SPRING_DOCKER_COMPOSE_ENABLED: false
 
@@ -48,8 +50,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/service-provider:latest 
-            ${{ secrets.DOCKER_USERNAME }}/service-provider:${{ github.sha }} 
+            ${{ secrets.DOCKER_USERNAME }}/booking-tour-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/booking-tour-app:${{ github.sha }} 
 
   deploy:
     needs: build-and-test

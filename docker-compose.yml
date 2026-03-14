@@ -3,7 +3,7 @@ version: "3.9"
 services:
   db:
     image: postgres:15-alpine
-    container_name: service-provider-db
+    container_name: booking-tour-db
     env_file:
       - .env
     environment:
@@ -21,7 +21,7 @@ services:
   app:
     build:
       context: ./   # <-- path to your project with Dockerfile
-    container_name: service-provider-app
+    container_name: booking-tour-app
     env_file:
       - .env
     ports:

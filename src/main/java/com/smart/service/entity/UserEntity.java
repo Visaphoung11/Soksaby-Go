@@ -56,7 +56,9 @@ public class UserEntity implements UserDetails {
     )
     @Builder.Default
     private Set<RoleEntity> roles = new HashSet<>();
-
+    public void addRole(RoleEntity role) {
+        this.roles.add(role);
+    }
 
     @Override
     @JsonIgnore

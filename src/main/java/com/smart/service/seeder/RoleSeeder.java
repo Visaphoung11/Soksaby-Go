@@ -26,12 +26,12 @@ public class RoleSeeder implements ApplicationListener<ContextRefreshedEvent> {
 
     private void loadRoles() {
         // 1. Define all roles including AGENT
-        enums[] roleNames = new enums[] { enums.ADMIN, enums.USER, enums.PROVIDER };
+        enums[] roleNames = new enums[] { enums.ADMIN, enums.USER, enums.DRIVER };
 
         Map<enums, String> roleDescriptionMap = Map.of(
                 enums.ADMIN, "Administrator role with full access",
                 enums.USER, "Standard user role for browsing",
-                enums.PROVIDER, "Provider role for giving services"
+                enums.DRIVER, "Driver role for giving services"
         );
 
         Arrays.stream(roleNames).forEach((roleName) -> {
