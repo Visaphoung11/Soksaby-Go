@@ -57,10 +57,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 4. Create the Cookie
         Cookie cookie = new Cookie("jwt_token", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(86400);
+        cookie.setHttpOnly(true); // Secure against XSS
+        cookie.setSecure(false); // Set to true in production (HTTPS)
+        cookie.setPath("/"); // Available for all backend paths
+        cookie.setMaxAge(86400); // 1 day
         response.addCookie(cookie);
 
         // 5. Redirect to React Dashboard (or your local dev port)
