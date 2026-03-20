@@ -54,7 +54,10 @@ public class SecurityConfiguration {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
-                                "/webjars/**"
+                                "/webjars/**",
+                                "/ws-soksabay/**",
+                                "/api/v1/auth/**"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -90,6 +93,8 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
+
+
         cfg.setAllowedOrigins(List.of("http://localhost:5173")); // Your Vite URL
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowCredentials(true); // Must be true for cookies!

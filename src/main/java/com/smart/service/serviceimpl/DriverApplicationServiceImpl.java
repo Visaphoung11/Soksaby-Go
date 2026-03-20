@@ -12,6 +12,7 @@ import com.smart.service.repository.RoleRepository;
 import com.smart.service.repository.UserRepository;
 import com.smart.service.service.DriverApplicationService;
 import com.smart.service.entity.DriverApplicationEntity;
+import com.smart.service.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ import java.util.List;
 public class DriverApplicationServiceImpl implements DriverApplicationService {
 
         // Dependency injections
-
+    private final NotificationService notificationService;
     private final DriverApplicationRepository applicationRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -58,6 +59,7 @@ public class DriverApplicationServiceImpl implements DriverApplicationService {
     }
 
     @Override
+    @Transactional // Ensure this is here so both DB updates and notifications stay in sync
     public void approveApplication(Long id) {
         DriverApplicationEntity app = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
@@ -73,15 +75,20 @@ public class DriverApplicationServiceImpl implements DriverApplicationService {
         UserEntity user = app.getUser();
         RoleEntity driverRole = roleRepository.findByName(enums.DRIVER);
 
-        // Add the role to the user's existing roles
         if (!user.getRoles().contains(driverRole)) {
             user.getRoles().add(driverRole);
             userRepository.save(user);
         }
 
         applicationRepository.save(app);
-    }
 
+        // Create and Send the Notification
+        notificationService.createAndSend(
+                user,
+                "Application Approved!",
+                "Congratulations! You are now a verified Driver on Soksabay-GO."
+        );
+    }
     @Override
     public void rejectApplication(Long id) {
         DriverApplicationEntity app = applicationRepository.findById(id)
