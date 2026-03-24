@@ -2,6 +2,7 @@ package com.smart.service.repository;
 
 import com.smart.service.entity.TripEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TripRepository extends JpaRepository<TripEntity, Long> {
+public interface TripRepository extends JpaRepository<TripEntity, Long>, JpaSpecificationExecutor<TripEntity> {
 
     // Check for overlapping trips for the same driver
     @Query("SELECT COUNT(t) FROM TripEntity t WHERE t.driver.id = :driverId " +
@@ -30,4 +31,8 @@ public interface TripRepository extends JpaRepository<TripEntity, Long> {
             "LEFT JOIN FETCH t.category " +
             "WHERE t.id = :id")
     Optional<TripEntity> findByIdWithDetails(@Param("id") Long id);
+    // Security Check: Find a trip by ID AND ensure it belongs to this specific driver
+// Useful for when a driver tries to 'Accept' a booking on a trip
+    Optional<TripEntity> findByIdAndDriverId(Long id, Long driverId);
 }
+
