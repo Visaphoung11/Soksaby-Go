@@ -33,8 +33,10 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: $ {{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          MAX_FILE_SIZE: ${{ secrets.MAX_FILE_SIZE }}
+          MAX_REQUEST_SIZE: ${{ secrets.MAX_REQUEST_SIZE }}
           # This disables the Docker Compose support during tests to avoid errors and staff
           SPRING_DOCKER_COMPOSE_ENABLED: false
 
