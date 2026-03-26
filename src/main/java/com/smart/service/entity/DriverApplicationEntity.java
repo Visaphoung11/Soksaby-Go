@@ -29,6 +29,12 @@ public class DriverApplicationEntity {
     @NotBlank(message = "ID card image URL is required")
     @Column(nullable = false)
     private String vehicleType;
+    // In DriverApplicationEntity.java
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
     // Links from Cloudinary
     private String idCardImageUrl;
     private String idCardPublicId;

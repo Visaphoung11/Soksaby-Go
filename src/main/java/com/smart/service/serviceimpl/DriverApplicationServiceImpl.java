@@ -13,10 +13,11 @@ import com.smart.service.repository.UserRepository;
 import com.smart.service.service.DriverApplicationService;
 import com.smart.service.entity.DriverApplicationEntity;
 import com.smart.service.service.NotificationService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,8 +38,8 @@ public class DriverApplicationServiceImpl implements DriverApplicationService {
         UserEntity user = userRepository.findByEmail(email);
 
         // 2. Business Rule: One application at a time
-        if (applicationRepository.existsByUser(user)) {
-            throw new RuntimeException("You already have an active application!");
+        if (user.getRoles().stream().anyMatch(r -> r.getName().equals(enums.DRIVER))) {
+            throw new RuntimeException("You are already a verified driver!");
         }
 
         // 3. Map DTO to Entity using MapStruct
@@ -89,8 +90,10 @@ public class DriverApplicationServiceImpl implements DriverApplicationService {
                 "Congratulations! You are now a verified Driver on Soksabay-GO."
         );
     }
+
     @Override
-    public void rejectApplication(Long id) {
+    @Transactional
+    public void rejectApplication(Long id, String reason) {
         DriverApplicationEntity app = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
@@ -98,17 +101,49 @@ public class DriverApplicationServiceImpl implements DriverApplicationService {
             throw new RuntimeException("Application is already " + app.getStatus());
         }
 
+        // 1. Update Status and the "Why"
         app.setStatus(ApplicationStatus.REJECTED);
+        app.setRejectionReason(reason); // 👈 From your new field
+        app.setReviewedAt(java.time.LocalDateTime.now()); // 👈 Track when it happened
+
         applicationRepository.save(app);
 
-        UserEntity user = app.getUser();
-
-        // this line is missing right now
+        // 2. Send detailed notification
         notificationService.createAndSend(
-                user,
+                app.getUser(),
                 "Application Rejected",
-                "Your driver application was rejected. Please review your details and apply again."
+                "Reason: " + reason + ". You can review your details and reapply."
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public DriverApplicationResponse getMyApplication(String email) {
+        UserEntity user = userRepository.findByEmail(email);
+
+        // Use the new repository method
+        DriverApplicationEntity app = applicationRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("No application found for this user."));
+
+        return mapper.toResponse(app);
+    }
+
+    @Override
+    @Transactional
+    public DriverApplicationResponse reapply(Long id, DriverApplicationRequest request) {
+        // 1. Get the one from the DB
+        DriverApplicationEntity existingApp = applicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        // 2. Use the new Mapper method to copy fields from Request -> Existing Entity
+        mapper.updateEntityFromRequest(request, existingApp);
+
+        // 3. Manually reset the "Process" fields
+        existingApp.setStatus(ApplicationStatus.PENDING);
+        existingApp.setRejectionReason(null);
+        existingApp.setCreatedAt(LocalDateTime.now());
+
+        // 4. Save and return
+        return mapper.toResponse(applicationRepository.save(existingApp));
+    }
 }

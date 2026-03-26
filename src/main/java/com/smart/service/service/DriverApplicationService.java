@@ -10,5 +10,9 @@ public interface DriverApplicationService {
     DriverApplicationResponse submitApplication(DriverApplicationRequest request, String email);
     List<DriverApplicationResponse> getAllApplications();
     void approveApplication(Long id);
-    void rejectApplication(Long id);
+    // Updated: Now accepts a reason
+    void rejectApplication(Long id, String reason);
+    DriverApplicationResponse getMyApplication(String email);
+    // New: Allow users to try again
+    DriverApplicationResponse reapply(Long id, DriverApplicationRequest request);
 }

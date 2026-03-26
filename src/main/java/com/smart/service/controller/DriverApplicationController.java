@@ -1,6 +1,7 @@
 package com.smart.service.controller;
 
 import com.smart.service.dtoRequest.DriverApplicationRequest;
+import com.smart.service.dtoRequest.RejectionRequest;
 import com.smart.service.dtoResponse.ApiResponse;
 import com.smart.service.dtoResponse.DriverApplicationResponse;
 import com.smart.service.service.DriverApplicationService;
@@ -83,16 +84,52 @@ public class DriverApplicationController {
      */
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> reject(@PathVariable Long id) {
-        service.rejectApplication(id);
+    public ResponseEntity<ApiResponse<Void>> reject(
+            @PathVariable Long id,
+            @RequestBody RejectionRequest rejectionRequest) { // Get reason from body
+
+        service.rejectApplication(id, rejectionRequest.getReason());
 
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
-                        .message("Application has been rejected.")
+                        .message("Application has been rejected. Reason: " + rejectionRequest.getReason())
                         .success(true)
                         .timestamp(LocalDateTime.now().toString())
                         .build()
         );
     }
+    /**
+     * 5. NEW: User re-submits a rejected application.
+     */
+    @PutMapping("/{id}/reapply")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<DriverApplicationResponse>> reapply(
+            @PathVariable Long id,
+            @RequestBody DriverApplicationRequest request) {
 
+        DriverApplicationResponse data = service.reapply(id, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<DriverApplicationResponse>builder()
+                        .message("Application re-submitted successfully. Reason cleared.")
+                        .success(true)
+                        .data(data)
+                        .timestamp(LocalDateTime.now().toString())
+                        .build()
+        );
+    }
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<DriverApplicationResponse>> getMyApplication(Principal principal) {
+        DriverApplicationResponse data = service.getMyApplication(principal.getName());
+
+        return ResponseEntity.ok(
+                ApiResponse.<DriverApplicationResponse>builder()
+                        .message("User application status retrieved.")
+                        .success(true)
+                        .data(data)
+                        .timestamp(LocalDateTime.now().toString())
+                        .build()
+        );
+    }
 }
