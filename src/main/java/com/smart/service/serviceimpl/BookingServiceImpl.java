@@ -6,6 +6,7 @@ import com.smart.service.entity.BookingEntity;
 import com.smart.service.entity.TripEntity;
 import com.smart.service.entity.UserEntity;
 import com.smart.service.enums.BookingStatus;
+import com.smart.service.exception.ResourceNotFoundException;
 import com.smart.service.mapper.BookingMapper;
 import com.smart.service.repository.BookingRepository;
 import com.smart.service.repository.TripRepository;
@@ -30,6 +31,11 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse createBooking(BookingRequest request, UserEntity passenger) {
         TripEntity trip = tripRepository.findById(request.tripId())
                 .orElseThrow(() -> new RuntimeException("Trip not found"));
+
+        // Logic for the own driver can not book their own trips
+        if (trip.getDriver().getId().equals(passenger.getId())) {
+            throw new RuntimeException("Validation Error: Drivers cannot book their own trips!");
+        }
 
         if (trip.getAvailableSeats() < request.seatsBooked()) {
             throw new RuntimeException("Insufficient seats available!");
@@ -64,7 +70,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingResponse handleBookingResponse(Long bookingId, Long driverId, boolean accept) {
         BookingEntity booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         // Security check: only the trip owner can respond
         if (!booking.getTrip().getDriver().getId().equals(driverId)) {
@@ -83,6 +89,37 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus(BookingStatus.REJECTED);
         }
 
+        return bookingMapper.toResponse(bookingRepository.save(booking));
+    }
+
+    @Override
+    @Transactional // it ensures Trip and Booking update together
+    public BookingResponse cancelBooking(Long bookingId, UserEntity currentUser) {
+        // 1. Fetch Booking
+        BookingEntity booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        // 2. Ownership Check (Security)
+        if (!booking.getPassenger().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Unauthorized: You can only cancel your own bookings");
+        }
+
+        // 3. Status Validation
+        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.REJECTED) {
+            throw new RuntimeException("Booking is already in a terminal state: " + booking.getStatus());
+        }
+
+        // 4. SEAT RECOVERY LOGIC
+        // If the booking was already CONFIRMED, we must give the seats back to the Trip
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            TripEntity trip = booking.getTrip();
+            int restoredSeats = trip.getAvailableSeats() + booking.getSeatsBooked();
+            trip.setAvailableSeats(restoredSeats);
+            tripRepository.save(trip);
+        }
+
+        // 5. Finalize Cancellation
+        booking.setStatus(BookingStatus.CANCELLED);
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 }

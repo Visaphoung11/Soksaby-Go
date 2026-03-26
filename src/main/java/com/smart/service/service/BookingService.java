@@ -14,4 +14,5 @@ public interface BookingService {
     // For Drivers
     List<BookingResponse> getIncomingRequests(Long driverId);
     BookingResponse handleBookingResponse(Long bookingId, Long driverId, boolean accept);
+    BookingResponse cancelBooking(Long bookingId, UserEntity currentUser);
 }
