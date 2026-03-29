@@ -17,13 +17,16 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Optional;
-
+import org.springframework.beans.factory.annotation.Value;
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final JwtService jwtService;
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -56,14 +59,22 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String token = jwtService.generateToken(user);
 
         // 4. Create the Cookie
-        Cookie cookie = new Cookie("jwt_token", token);
-        cookie.setHttpOnly(true); // Secure against XSS
-        cookie.setSecure(false); // Set to true in production (HTTPS)
-        cookie.setPath("/"); // Available for all backend paths
-        cookie.setMaxAge(86400); // 1 day
-        response.addCookie(cookie);
+//        Cookie cookie = new Cookie("jwt_token", token);
+//        cookie.setHttpOnly(true); // Secure against XSS
+//        cookie.setSecure(true); // Set to true in production (HTTPS)
+//        cookie.setPath("/"); // Available for all backend paths
+//        cookie.setMaxAge(86400); // 1 day
+//        response.addCookie(cookie);
+        String cookie = "jwt_token=" + token +
+                "; Path=/" +
+                "; HttpOnly" +
+                "; Secure" +
+                "; SameSite=None" +
+                "; Max-Age=86400";
+
+        response.setHeader("Set-Cookie", cookie);
 
         // 5. Redirect to React Dashboard (or your local dev port)
         // If using React, this is usually http://localhost:5173/dashboard
-        response.sendRedirect("http://localhost:5173/dashboard");    }
+        response.sendRedirect(frontendUrl + "/dashboard");   }
 }

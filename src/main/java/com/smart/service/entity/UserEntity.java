@@ -45,6 +45,8 @@ public class UserEntity implements UserDetails {
     private String password;
     @Column(name = "gender")
     private String gender;
+    @Column(name = "profile_image")
+    private String profileImage;
     private String status; // e.g., "ACTIVE", "INACTIVE"
 
     // Many-to-Many relationship with the 'role' table via 'user_role' join table
