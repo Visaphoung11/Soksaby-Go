@@ -85,6 +85,19 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus(BookingStatus.CONFIRMED);
             trip.setAvailableSeats(trip.getAvailableSeats() - booking.getSeatsBooked());
             tripRepository.save(trip);
+
+            // First Booking Wins Logic:
+            LocalDateTime start = trip.getDepartureTime().minusHours(4);
+            LocalDateTime end = trip.getDepartureTime().plusHours(4);
+            List<TripEntity> overlappingTrips = tripRepository.findOverlappingTripsForCancellation(
+                    trip.getDriver().getId(), start, end, trip.getId());
+            
+            for (TripEntity overlap : overlappingTrips) {
+                overlap.setStatus(com.smart.service.enums.TripStatus.CANCELLED);
+            }
+            if (!overlappingTrips.isEmpty()) {
+                tripRepository.saveAll(overlappingTrips);
+            }
         } else {
             booking.setStatus(BookingStatus.REJECTED);
         }

@@ -17,13 +17,38 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TripServiceImpl implements TripService {
 
     private final TripRepository tripRepository;
-    private final CategoryRepository categoryRepository; // Need this for category_id
+    private final CategoryRepository categoryRepository;
     private final TripMapper tripMapper;
+
+    private void validateTripConstraints(TripRequest request) {
+        if ("TUK_TUK".equalsIgnoreCase(request.transportationType())) {
+            int capacity = request.vehicleCapacity() != null ? request.vehicleCapacity() : (request.totalSeats() != null ? request.totalSeats() : 0);
+            if (capacity > 5) {
+                throw new RuntimeException("Validation Error: TUK_TUK maximum capacity is 5 seats.");
+            }
+            if (!Boolean.TRUE.equals(request.isWholeVehicleBooking()) || request.wholeVehiclePrice() == null) {
+                throw new RuntimeException("Validation Error: TUK_TUK trips must use Fixed Price (Whole Vehicle Booking with wholeVehiclePrice).");
+            }
+        } else if ("BUS".equalsIgnoreCase(request.transportationType())) {
+            int capacity = request.vehicleCapacity() != null ? request.vehicleCapacity() : (request.totalSeats() != null ? request.totalSeats() : 0);
+            if (capacity != 25 && capacity != 40) {
+                throw new RuntimeException("Validation Error: BUS capacity must be exactly 25 or 40 seats.");
+            }
+        }
+
+        if (!"TUK_TUK".equalsIgnoreCase(request.transportationType())) {
+            if (request.pricePerSeat() == null && request.wholeVehiclePrice() == null) {
+                throw new RuntimeException("Validation Error: Trip must have either pricePerSeat or wholeVehiclePrice.");
+            }
+        }
+    }
+
     @Override
     @Transactional
     public TripResponse createTrip(TripRequest request, UserEntity driver) {
@@ -33,25 +58,38 @@ public class TripServiceImpl implements TripService {
             throw new RuntimeException("Schedule Conflict: You already have a trip at this time.");
         }
 
+        validateTripConstraints(request);
+
         // 2. Use Mapper to convert Request -> Entity
         TripEntity trip = tripMapper.toEntity(request);
-// 3. IMPORTANT: Set the "Back-Reference" for Images
-        if (trip.getImages() != null) {
-            trip.getImages().forEach(image -> image.setTrip(trip)); // This is to save images
-        }
-        // 3. Set manual fields
-        trip.setDriver(driver);
-        trip.setAvailableSeats(request.totalSeats());
 
-        // 4. Handle Category (since the mapper only sees the ID)
+        // 3. IMPORTANT: Set the "Back-Reference" for nested collections
+        if (trip.getImages() != null) {
+            trip.getImages().forEach(image -> image.setTrip(trip)); 
+        }
+        if (trip.getItinerary() != null) {
+            trip.getItinerary().forEach(item -> item.setTrip(trip));
+        }
+
+        // Set manual fields
+        trip.setDriver(driver);
+        // Preference for vehicleCapacity as total available seats if provided
+        int initialSeats = request.vehicleCapacity() != null ? request.vehicleCapacity() : request.totalSeats();
+        trip.setAvailableSeats(initialSeats);
+        if (trip.getTotalSeats() == null) {
+            trip.setTotalSeats(initialSeats);
+        }
+
+        // 4. Handle Category
         if (request.categoryId() != null) {
             trip.setCategory(categoryRepository.findById(request.categoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found")));
         }
 
-        // 5. Save and use Mapper to convert Entity -> Response
+        // 5. Save and return Response
         return tripMapper.toResponse(tripRepository.save(trip));
     }
+
     @Override
     @Transactional
     public TripResponse updateTrip(Long id, TripRequest request, Long driverId) {
@@ -66,28 +104,41 @@ public class TripServiceImpl implements TripService {
             throw new RuntimeException("Cannot edit trip: Seats already booked.");
         }
 
-        //  Use Mapper to update the existing entity
+        validateTripConstraints(request);
+
+        // Use Mapper to update the existing entity
         tripMapper.updateEntityFromRequest(request, trip);
-        // Apply category update (mapper ignores category)
+
+        // Apply category update
         if (request.categoryId() != null) {
             trip.setCategory(categoryRepository.findById(request.categoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found")));
         }
 
-        // Apply image update (mapper currently ignores images)
+        // Apply image update
         if (request.imageUrls() != null) {
-            trip.getImages().clear(); // orphanRemoval=true removes old image rows
-
+            trip.getImages().clear();
             List<TripImageEntity> newImages = tripMapper.mapUrlsToEntities(request.imageUrls());
-            newImages.forEach(img -> img.setTrip(trip)); // IMPORTANT back-reference
-
+            newImages.forEach(img -> img.setTrip(trip));
             trip.getImages().addAll(newImages);
         }
 
+        // Apply vehicle image update
+        if (request.vehicleImageUrls() != null) {
+            trip.getVehicleImageUrls().clear();
+            trip.getVehicleImageUrls().addAll(request.vehicleImageUrls());
+        }
+
+        // Apply itinerary update
+        if (request.itinerary() != null) {
+            trip.getItinerary().clear();
+            List<com.smart.service.entity.ItineraryItemEntity> newItinerary = tripMapper.mapItineraryRequestsToEntities(request.itinerary());
+            newItinerary.forEach(item -> item.setTrip(trip));
+            trip.getItinerary().addAll(newItinerary);
+        }
 
         return tripMapper.toResponse(tripRepository.save(trip));
     }
-
 
     @Override
     @Transactional
@@ -103,9 +154,8 @@ public class TripServiceImpl implements TripService {
     }
 
     @Override
-    @Transactional(readOnly = true) // This keeps the session open
+    @Transactional(readOnly = true)
     public List<TripResponse> getMyTrips(Long driverId) {
-        // Use the new repository method with JOIN FETCH
         return tripRepository.findAllByDriverId(driverId).stream()
                 .map(tripMapper::toResponse)
                 .toList();
@@ -114,7 +164,6 @@ public class TripServiceImpl implements TripService {
     @Override
     @Transactional(readOnly = true)
     public TripResponse getTripById(Long id) {
-        // Use the optimized query
         return tripRepository.findByIdWithDetails(id)
                 .map(tripMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found"));

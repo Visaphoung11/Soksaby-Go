@@ -31,7 +31,13 @@ public interface TripMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "driver", ignore = true)
     @Mapping(target = "images", ignore = true)
+    @Mapping(target = "itinerary", ignore = true) // Handled manually for back-reference
+    @Mapping(target = "vehicleImageUrls", ignore = true) // Handled manually to preserve JPA element collection tracking
     void updateEntityFromRequest(TripRequest request, @MappingTarget TripEntity entity);
+
+    com.smart.service.entity.ItineraryItemEntity mapItineraryRequestToEntity(com.smart.service.dtoRequest.ItineraryItemRequest req);
+    List<com.smart.service.entity.ItineraryItemEntity> mapItineraryRequestsToEntities(List<com.smart.service.dtoRequest.ItineraryItemRequest> requests);
+    com.smart.service.dtoResponse.ItineraryItemResponse mapItineraryEntityToResponse(com.smart.service.entity.ItineraryItemEntity entity);
 
     // --- HELPER METHODS ---
 

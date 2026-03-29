@@ -46,6 +46,33 @@ public class TripEntity {
     @JoinColumn(name = "category_id")
     private CategoryEntity category;
 
+    private String transportationType;
+
+    private Integer vehicleCapacity;
+    private Boolean isWholeVehicleBooking;
+    private Double wholeVehiclePrice;
+    
+    private String scheduleDescription;
+    
+    private Boolean hasTourGuide;
+    @Column(columnDefinition = "TEXT")
+    private String tourGuideDescription;
+    private String tourGuideImageUrl;
+    
+    private Boolean mealsIncluded;
+    @Column(columnDefinition = "TEXT")
+    private String diningDetails;
+    
+    private String availabilitySchedule;
+
+    @ElementCollection
+    @CollectionTable(name = "trip_vehicle_images", joinColumns = @JoinColumn(name = "trip_id"))
+    @Column(name = "image_url")
+    private List<String> vehicleImageUrls = new ArrayList<>();
+
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItineraryItemEntity> itinerary = new ArrayList<>();
+
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripImageEntity> images = new ArrayList<>();
 }

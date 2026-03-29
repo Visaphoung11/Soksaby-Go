@@ -19,6 +19,16 @@ public interface TripRepository extends JpaRepository<TripEntity, Long>, JpaSpec
             "AND t.status = 'AVAILABLE' " +
             "AND t.departureTime BETWEEN :start AND :end")
     long countOverlappingTrips(Long driverId, LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT t FROM TripEntity t WHERE t.driver.id = :driverId " +
+            "AND t.status IN ('AVAILABLE', 'PENDING') " +
+            "AND t.departureTime BETWEEN :start AND :end " +
+            "AND t.id != :excludeTripId")
+    List<TripEntity> findOverlappingTripsForCancellation(
+            @Param("driverId") Long driverId, 
+            @Param("start") LocalDateTime start, 
+            @Param("end") LocalDateTime end, 
+            @Param("excludeTripId") Long excludeTripId);
     // Use JOIN FETCH to load the driver and category in one go
     @Query("SELECT t FROM TripEntity t " +
             "LEFT JOIN FETCH t.driver " +
