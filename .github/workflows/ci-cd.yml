@@ -36,6 +36,7 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           MAX_FILE_SIZE: ${{ secrets.MAX_FILE_SIZE }}
+          FRONTEND_URL: $ {{ secrets.FRONTEND_URL }}
           MAX_REQUEST_SIZE: ${{ secrets.MAX_REQUEST_SIZE }}
           # This disables the Docker Compose support during tests to avoid errors and staff
           SPRING_DOCKER_COMPOSE_ENABLED: false
