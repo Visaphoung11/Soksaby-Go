@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public interface UserMapper {
 
     @Mapping(source = "roles", target = "roles", qualifiedByName = "mapRoles")
+    @Mapping(target = "ratingCount", ignore = true)
     UserProfileResponse toResponse(UserEntity entity);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

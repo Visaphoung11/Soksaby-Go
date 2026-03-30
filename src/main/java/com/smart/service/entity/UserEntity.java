@@ -43,7 +43,10 @@ public class UserEntity implements UserDetails {
 
     @JsonIgnore
     private String password;
-    @Column(name = "gender")
+    private String avatar;
+    private String bannerUrl;
+    @Column(columnDefinition = "TEXT")
+    private String bio;
     private String gender;
     @Column(name = "profile_image")
     private String profileImage;

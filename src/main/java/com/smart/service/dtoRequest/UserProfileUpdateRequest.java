@@ -14,4 +14,6 @@ public class UserProfileUpdateRequest {
     private String contactNumber;
     private String gender;
     private String profileImage;
+    private String bannerUrl;
+    private String bio;
 }
