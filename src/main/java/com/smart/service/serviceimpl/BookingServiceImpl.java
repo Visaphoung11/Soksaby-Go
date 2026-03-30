@@ -50,6 +50,10 @@ public class BookingServiceImpl implements BookingService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        // Deduct seats immediately so no one else can book them while pending
+        trip.setAvailableSeats(trip.getAvailableSeats() - request.seatsBooked());
+        tripRepository.save(trip);
+
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 
@@ -78,14 +82,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (accept) {
-            TripEntity trip = booking.getTrip();
-            if (trip.getAvailableSeats() < booking.getSeatsBooked()) {
-                throw new RuntimeException("Seats no longer available");
-            }
             booking.setStatus(BookingStatus.CONFIRMED);
-            trip.setAvailableSeats(trip.getAvailableSeats() - booking.getSeatsBooked());
-            tripRepository.save(trip);
 
+            TripEntity trip = booking.getTrip();
             // First Booking Wins Logic:
             LocalDateTime start = trip.getDepartureTime().minusHours(4);
             LocalDateTime end = trip.getDepartureTime().plusHours(4);
@@ -100,6 +99,10 @@ public class BookingServiceImpl implements BookingService {
             }
         } else {
             booking.setStatus(BookingStatus.REJECTED);
+            // Restore the seats since the driver rejected the booking
+            TripEntity trip = booking.getTrip();
+            trip.setAvailableSeats(trip.getAvailableSeats() + booking.getSeatsBooked());
+            tripRepository.save(trip);
         }
 
         return bookingMapper.toResponse(bookingRepository.save(booking));
@@ -123,8 +126,9 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 4. SEAT RECOVERY LOGIC
-        // If the booking was already CONFIRMED, we must give the seats back to the Trip
-        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+        // Since seats are reserved immediately at PENDING, we must give them back
+        // if the booking is currently PENDING or CONFIRMED.
+        if (booking.getStatus() == BookingStatus.CONFIRMED || booking.getStatus() == BookingStatus.PENDING) {
             TripEntity trip = booking.getTrip();
             int restoredSeats = trip.getAvailableSeats() + booking.getSeatsBooked();
             trip.setAvailableSeats(restoredSeats);
