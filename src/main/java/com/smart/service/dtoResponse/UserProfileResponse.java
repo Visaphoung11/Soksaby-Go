@@ -13,5 +13,8 @@ public class UserProfileResponse {
     private String contactNumber;
     private String gender;
     private String profileImage;
+    private String bannerUrl;
+    private String bio;
+    private Long ratingCount;
     private List<String> roles;
 }

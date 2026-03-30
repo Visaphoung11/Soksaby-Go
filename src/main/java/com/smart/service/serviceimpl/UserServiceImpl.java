@@ -16,6 +16,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final com.smart.service.repository.ReviewRepository reviewRepository;
 
     @Override
     public UserProfileResponse getUserProfile(String email) {
@@ -23,7 +24,9 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }
-        return userMapper.toResponse(user);
+        UserProfileResponse response = userMapper.toResponse(user);
+        response.setRatingCount(reviewRepository.countByDriverId(user.getId()));
+        return response;
     }
 
     @Override
@@ -36,6 +39,8 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUserFromDto(request, user);
 
         UserEntity updatedUser = userRepository.save(user);
-        return userMapper.toResponse(updatedUser);
+        UserProfileResponse response = userMapper.toResponse(updatedUser);
+        response.setRatingCount(reviewRepository.countByDriverId(user.getId()));
+        return response;
     }
 }
