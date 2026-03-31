@@ -5,5 +5,6 @@ import java.util.List;
 
 public interface PublicTripService {
     List<TripResponse> searchTrips(String origin, String destination, LocalDate date);
+    List<TripResponse> getAllTrips();
     TripResponse getTripDetails(Long id);
 }

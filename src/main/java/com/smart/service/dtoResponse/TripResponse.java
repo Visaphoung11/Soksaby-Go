@@ -35,5 +35,8 @@ public record TripResponse(
         
         String availabilitySchedule,
         
+        Double averageRating,
+        Integer totalReviews,
+        
         List<ItineraryItemResponse> itinerary
 ) {}

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PublicTripServiceImpl implements PublicTripService {
@@ -41,5 +42,14 @@ public class PublicTripServiceImpl implements PublicTripService {
         return tripRepository.findByIdWithDetails(id)
                 .map(tripMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Trip not found with ID: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TripResponse> getAllTrips() {
+        Specification<TripEntity> spec = TripSpecification.hasFilters(null, null, null);
+        return tripRepository.findAll(spec).stream()
+                .map(tripMapper::toResponse)
+                .toList();
     }
 }
