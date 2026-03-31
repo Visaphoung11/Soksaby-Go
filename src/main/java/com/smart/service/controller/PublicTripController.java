@@ -18,6 +18,11 @@ public class PublicTripController {
     private final PublicTripService publicTripService;
 
 
+    @GetMapping
+    public ResponseEntity<List<TripResponse>> getAll() {
+        return ResponseEntity.ok(publicTripService.getAllTrips());
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<TripResponse>> search(
             @RequestParam(required = false) String origin,

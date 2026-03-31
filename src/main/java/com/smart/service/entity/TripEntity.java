@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Entity
 @Table(name = "trips")
 @Data
@@ -51,18 +50,18 @@ public class TripEntity {
     private Integer vehicleCapacity;
     private Boolean isWholeVehicleBooking;
     private Double wholeVehiclePrice;
-    
+
     private String scheduleDescription;
-    
+
     private Boolean hasTourGuide;
     @Column(columnDefinition = "TEXT")
     private String tourGuideDescription;
     private String tourGuideImageUrl;
-    
+
     private Boolean mealsIncluded;
     @Column(columnDefinition = "TEXT")
     private String diningDetails;
-    
+
     private String availabilitySchedule;
 
     @ElementCollection
@@ -75,4 +74,10 @@ public class TripEntity {
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripImageEntity> images = new ArrayList<>();
+
+    @org.hibernate.annotations.Formula("(SELECT COUNT(r.id) FROM reviews r WHERE r.trip_id = id)")
+    private Integer totalReviews;
+
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.trip_id = id)")
+    private Double averageRating;
 }
