@@ -11,8 +11,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
+
 @Repository
 public interface TripRepository extends JpaRepository<TripEntity, Long>, JpaSpecificationExecutor<TripEntity> {
+
+    @EntityGraph(attributePaths = {"driver", "category"})
+    List<TripEntity> findAll(Specification<TripEntity> spec);
 
     // Check for overlapping trips for the same driver
     @Query("SELECT COUNT(t) FROM TripEntity t WHERE t.driver.id = :driverId " +

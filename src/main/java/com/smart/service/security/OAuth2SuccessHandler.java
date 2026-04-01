@@ -76,5 +76,5 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         // 5. Redirect to React Dashboard (or your local dev port)
         // If using React, this is usually http://localhost:5173/dashboard
-        response.sendRedirect(frontendUrl + "/dashboard");   }
+        response.sendRedirect(frontendUrl); }
 }
