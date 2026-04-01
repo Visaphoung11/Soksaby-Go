@@ -62,6 +62,8 @@ public class SecurityConfiguration {
 
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/driver/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/trip/**").permitAll()
                         .anyRequest().authenticated()
                 )
 

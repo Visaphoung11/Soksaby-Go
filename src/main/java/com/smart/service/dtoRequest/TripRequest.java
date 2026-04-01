@@ -12,7 +12,7 @@ public record TripRequest(
         Integer totalSeats,
         LocalDateTime departureTime,
         Long categoryId,
-        List<String> imageUrls, // URLs from your media upload endpoint
+        List<String> imageUrls, // URLs from my media upload endpoint
         
         String transportationType,
         Integer vehicleCapacity,
