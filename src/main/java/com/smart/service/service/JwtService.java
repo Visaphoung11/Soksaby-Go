@@ -60,6 +60,24 @@ public class JwtService {
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
+    public String generateWsToken(UserEntity user) {
+        List<String> roles = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("roles", roles);
+        extraClaims.put("userId", user.getId());
+
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60)) // 1 hour
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
 // Optional: cleaner refresh token for UserEntity
     public String generateRefresh(UserEntity user) {
         return Jwts.builder()

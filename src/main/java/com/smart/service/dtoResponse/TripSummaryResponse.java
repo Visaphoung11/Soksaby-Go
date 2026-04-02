@@ -7,5 +7,6 @@ public record TripSummaryResponse(
         String title,
         String destination,
         LocalDateTime departureTime,
-        String driverName
+        String driverName,
+        Long driverId
 ) {}

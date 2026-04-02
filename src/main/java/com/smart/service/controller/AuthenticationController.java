@@ -13,10 +13,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.smart.service.entity.UserEntity;
+import com.smart.service.exception.UnauthorizedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 
@@ -63,6 +63,15 @@ public class AuthenticationController {
         // service will throw UnauthorizedException for invalid credentials
         APIsResponse<?> apiResponse = authenticationService.authenticate(request);
         return ResponseEntity.ok(apiResponse); // 200 OK
+    }
+
+    @GetMapping("/ws-token")
+    public ResponseEntity<APIsResponse<?>> getWsToken(@AuthenticationPrincipal UserEntity user) {
+        if (user == null) {
+            throw new UnauthorizedException("User not authenticated");
+        }
+        APIsResponse<?> response = authenticationService.getWsToken(user);
+        return ResponseEntity.ok(response);
     }
 
     private void setJwtCookie(HttpServletResponse response, String token) {

@@ -31,6 +31,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/queue");
         config.setApplicationDestinationPrefixes("/app");
+        config.setUserDestinationPrefix("/user");
     }
 
     @Override
@@ -47,29 +48,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 StompHeaderAccessor accessor =
                         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-                // 1. Check if the user is trying to CONNECT
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-
-                    if (accessor.getUser() != null) return message;
-
-                    // 2. Extract Authorization Header
                     String authHeader = accessor.getFirstNativeHeader("Authorization");
 
                     if (authHeader != null && authHeader.startsWith("Bearer ")) {
                         String token = authHeader.substring(7);
-                        String username = jwtService.extractUserName(token);
+                        try {
+                            String username = jwtService.extractUserName(token);
 
-                        if (username != null && accessor.getUser() == null) {
+                            if (username != null && accessor.getUser() == null) {
+                                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                            if (jwtService.isTokenValid(token, userDetails)) {
-                                // 3. Set the User into the WebSocket Header
-                                UsernamePasswordAuthenticationToken authToken =
-                                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-                                accessor.setUser(authToken);
+                                if (jwtService.isTokenValid(token, userDetails)) {
+                                    UsernamePasswordAuthenticationToken authToken =
+                                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                                    accessor.setUser(authToken);
+                                }
                             }
+                        } catch (Exception e) {
+                            System.err.println("WS-Auth-Error: " + e.getMessage());
                         }
                     }
                 }

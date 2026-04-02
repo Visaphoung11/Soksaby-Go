@@ -157,4 +157,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                 .build();
         }
 
+        @Override
+        public APIsResponse<AuthenticationResponse> getWsToken(UserEntity user) {
+                String token = jwtService.generateWsToken(user);
+                
+                AuthenticationResponse response = AuthenticationResponse.builder()
+                                .userId(user.getId())
+                                .accessToken(token)
+                                .build();
+
+                return APIsResponse.<AuthenticationResponse>builder()
+                                .statusCode(HttpStatus.OK.value())
+                                .message("WebSocket token generated")
+                                .data(response)
+                                .build();
+        }
+
 }

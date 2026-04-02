@@ -10,5 +10,6 @@ public interface BookingMapper {
     @Mapping(source = "passenger.fullName", target = "passengerName")
     @Mapping(source = "passenger.contactNumber", target = "passengerPhone")
     @Mapping(source = "trip.driver.fullName", target = "trip.driverName")
+    @Mapping(source = "trip.driver.id", target = "trip.driverId")
     BookingResponse toResponse(BookingEntity entity);
 }

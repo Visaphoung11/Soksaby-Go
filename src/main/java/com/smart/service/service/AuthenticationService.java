@@ -15,4 +15,6 @@ public interface AuthenticationService {
 
     APIsResponse<AuthenticationResponse> authenticate(AuthenticationRequest authenticationRequest);
 
+    APIsResponse<AuthenticationResponse> getWsToken(UserEntity user);
+
 }
