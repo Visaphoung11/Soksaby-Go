@@ -15,4 +15,6 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     List<ReviewEntity> findAllByDriverIdOrderByCreatedAtDesc(@Param("driverId") Long driverId);
 
     long countByDriverId(Long driverId);
+
+    boolean existsByPassengerIdAndTripId(Long passengerId, Long tripId);
 }

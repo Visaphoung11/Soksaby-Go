@@ -22,7 +22,11 @@ public class DriverBookingController {
     }
 
     @PatchMapping("/{id}/respond")
-    public ResponseEntity<BookingResponse> respond(@PathVariable Long id, @RequestParam boolean accept, @AuthenticationPrincipal UserEntity driver) {
-        return ResponseEntity.ok(bookingService.handleBookingResponse(id, driver.getId(), accept));
+    public ResponseEntity<BookingResponse> respond(
+            @PathVariable Long id, 
+            @RequestParam boolean accept, 
+            @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal UserEntity driver) {
+        return ResponseEntity.ok(bookingService.handleBookingResponse(id, driver.getId(), accept, reason));
     }
 }

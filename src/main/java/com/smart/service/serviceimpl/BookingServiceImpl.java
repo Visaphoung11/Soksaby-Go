@@ -11,12 +11,14 @@ import com.smart.service.mapper.BookingMapper;
 import com.smart.service.repository.BookingRepository;
 import com.smart.service.repository.TripRepository;
 import com.smart.service.service.BookingService;
+import com.smart.service.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -25,7 +27,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final TripRepository tripRepository;
     private final BookingMapper bookingMapper;
-
+    private final NotificationService notificationService;
 
     @Override
     public BookingResponse createBooking(BookingRequest request, UserEntity passenger) {
@@ -34,11 +36,21 @@ public class BookingServiceImpl implements BookingService {
 
         // Logic for the own driver can not book their own trips
         if (trip.getDriver().getId().equals(passenger.getId())) {
-            throw new RuntimeException("Validation Error: Drivers cannot book their own trips!");
+            throw new RuntimeException("Drivers cannot book their own trips!");
         }
 
         if (trip.getAvailableSeats() < request.seatsBooked()) {
             throw new RuntimeException("Insufficient seats available!");
+        }
+
+        // Prevent passenger from booking the same trip twice if they already have an active booking
+        boolean alreadyBooked = bookingRepository.existsByPassengerIdAndTripIdAndStatusIn(
+                passenger.getId(), 
+                trip.getId(), 
+                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED)
+        );
+        if (alreadyBooked) {
+            throw new RuntimeException("You already booked this trip.");
         }
 
         BookingEntity booking = BookingEntity.builder()
@@ -72,7 +84,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse handleBookingResponse(Long bookingId, Long driverId, boolean accept) {
+    public BookingResponse handleBookingResponse(Long bookingId, Long driverId, boolean accept, String reason) {
         BookingEntity booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
@@ -81,28 +93,45 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Unauthorized to handle this booking");
         }
 
+        UserEntity passenger = booking.getPassenger();
+        TripEntity trip = booking.getTrip();
+
         if (accept) {
             booking.setStatus(BookingStatus.CONFIRMED);
 
-            TripEntity trip = booking.getTrip();
-            // First Booking Wins Logic:
+            // First Booking Wins Logic: (Overlapping trips from same driver)
             LocalDateTime start = trip.getDepartureTime().minusHours(4);
             LocalDateTime end = trip.getDepartureTime().plusHours(4);
             List<TripEntity> overlappingTrips = tripRepository.findOverlappingTripsForCancellation(
                     trip.getDriver().getId(), start, end, trip.getId());
-            
+
             for (TripEntity overlap : overlappingTrips) {
                 overlap.setStatus(com.smart.service.enums.TripStatus.CANCELLED);
             }
             if (!overlappingTrips.isEmpty()) {
                 tripRepository.saveAll(overlappingTrips);
             }
+
+            // Notify Passenger about Acceptance
+            notificationService.createAndSend(
+                    passenger,
+                    "Booking Confirmed!",
+                    "Your booking for trip '" + trip.getTitle() + "' has been accepted by the driver."
+            );
         } else {
             booking.setStatus(BookingStatus.REJECTED);
+            booking.setRejectionReason(reason);
+
             // Restore the seats since the driver rejected the booking
-            TripEntity trip = booking.getTrip();
             trip.setAvailableSeats(trip.getAvailableSeats() + booking.getSeatsBooked());
             tripRepository.save(trip);
+
+            // Notify Passenger about Rejection
+            String rejectionMsg = "Your booking for trip '" + trip.getTitle() + "' was rejected by the driver.";
+            if (reason != null && !reason.isBlank()) {
+                rejectionMsg += " Reason: " + reason;
+            }
+            notificationService.createAndSend(passenger, "Booking Rejected", rejectionMsg);
         }
 
         return bookingMapper.toResponse(bookingRepository.save(booking));

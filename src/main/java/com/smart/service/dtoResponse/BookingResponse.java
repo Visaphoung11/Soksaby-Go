@@ -10,6 +10,7 @@ public record BookingResponse(
         LocalDateTime createdAt,
         TripSummaryResponse trip, // Nested trip info
         String passengerName,
-        String passengerPhone
+        String passengerPhone,
+        String rejectionReason
 ) {}
 

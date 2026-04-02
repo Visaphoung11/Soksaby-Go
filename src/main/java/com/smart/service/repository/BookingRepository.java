@@ -17,4 +17,6 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     List<BookingEntity> findPendingRequestsByDriverId(@Param("driverId") Long driverId);
 
     boolean existsByPassengerIdAndTripIdAndStatus(Long passengerId, Long tripId, com.smart.service.enums.BookingStatus status);
+
+    boolean existsByPassengerIdAndTripIdAndStatusIn(Long passengerId, Long tripId, List<com.smart.service.enums.BookingStatus> statuses);
 }

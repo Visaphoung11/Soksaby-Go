@@ -30,7 +30,7 @@ public class ReviewServiceImpl implements ReviewService {
     public ReviewResponse createReview(ReviewRequest request, UserEntity passenger) {
         // 1. Validate Rating 1-5
         if (request.rating() < 1 || request.rating() > 5) {
-            throw new RuntimeException("Validation Error: Rating must be between 1 and 5.");
+            throw new RuntimeException("Rating must be between 1 and 5.");
         }
 
         // 2. Fetch Trip
@@ -40,9 +40,15 @@ public class ReviewServiceImpl implements ReviewService {
         // 3. Verify Passenger actually traveled (CONFIRMED booking)
         boolean hasTraveled = bookingRepository.existsByPassengerIdAndTripIdAndStatus(
                 passenger.getId(), trip.getId(), BookingStatus.CONFIRMED);
-        
+
         if (!hasTraveled) {
-            throw new RuntimeException("Validation Error: You can only review trips you have completed/confirmed.");
+            throw new RuntimeException("You can only review trips you have completed/confirmed.");
+        }
+
+        // 3.5 Verify Passenger hasn't already reviewed this trip
+        boolean hasReviewed = reviewRepository.existsByPassengerIdAndTripId(passenger.getId(), trip.getId());
+        if (hasReviewed) {
+            throw new RuntimeException("You have already reviewed this trip.");
         }
 
         // 4. Create Review
@@ -88,7 +94,6 @@ public class ReviewServiceImpl implements ReviewService {
                 entity.getImageUrls(),
                 entity.getPassenger().getFullName(),
                 entity.getPassenger().getProfileImage(),
-                entity.getCreatedAt()
-        );
+                entity.getCreatedAt());
     }
 }

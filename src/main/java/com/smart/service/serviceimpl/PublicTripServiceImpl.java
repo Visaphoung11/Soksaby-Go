@@ -7,7 +7,6 @@ import com.smart.service.repository.TripRepository;
 import com.smart.service.service.PublicTripService;
 import com.smart.service.service.TripSpecification;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

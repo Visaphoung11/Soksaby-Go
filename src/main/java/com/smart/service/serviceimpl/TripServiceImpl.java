@@ -28,23 +28,27 @@ public class TripServiceImpl implements TripService {
 
     private void validateTripConstraints(TripRequest request) {
         if ("TUK_TUK".equalsIgnoreCase(request.transportationType())) {
-            int capacity = request.vehicleCapacity() != null ? request.vehicleCapacity() : (request.totalSeats() != null ? request.totalSeats() : 0);
+            int capacity = request.vehicleCapacity() != null ? request.vehicleCapacity()
+                    : (request.totalSeats() != null ? request.totalSeats() : 0);
             if (capacity > 5) {
-                throw new RuntimeException("Validation Error: TUK_TUK maximum capacity is 5 seats.");
+                throw new RuntimeException("TuKTuK maximum capacity is 5 seats.");
             }
             if (!Boolean.TRUE.equals(request.isWholeVehicleBooking()) || request.wholeVehiclePrice() == null) {
-                throw new RuntimeException("Validation Error: TUK_TUK trips must use Fixed Price (Whole Vehicle Booking with wholeVehiclePrice).");
+                throw new RuntimeException(
+                        "TukTuk trips must use Fixed Price (Whole Vehicle Booking with wholeVehiclePrice).");
             }
         } else if ("BUS".equalsIgnoreCase(request.transportationType())) {
-            int capacity = request.vehicleCapacity() != null ? request.vehicleCapacity() : (request.totalSeats() != null ? request.totalSeats() : 0);
+            int capacity = request.vehicleCapacity() != null ? request.vehicleCapacity()
+                    : (request.totalSeats() != null ? request.totalSeats() : 0);
             if (capacity != 25 && capacity != 40) {
-                throw new RuntimeException("Validation Error: BUS capacity must be exactly 25 or 40 seats.");
+                throw new RuntimeException("BUS capacity must be exactly 25 or 40 seats.");
             }
         }
 
         if (!"TUK_TUK".equalsIgnoreCase(request.transportationType())) {
             if (request.pricePerSeat() == null && request.wholeVehiclePrice() == null) {
-                throw new RuntimeException("Validation Error: Trip must have either pricePerSeat or wholeVehiclePrice.");
+                throw new RuntimeException(
+                        "Trip must have either pricePerSeat or wholeVehiclePrice.");
             }
         }
     }
@@ -65,7 +69,7 @@ public class TripServiceImpl implements TripService {
 
         // 3. IMPORTANT: Set the "Back-Reference" for nested collections
         if (trip.getImages() != null) {
-            trip.getImages().forEach(image -> image.setTrip(trip)); 
+            trip.getImages().forEach(image -> image.setTrip(trip));
         }
         if (trip.getItinerary() != null) {
             trip.getItinerary().forEach(item -> item.setTrip(trip));
@@ -132,7 +136,8 @@ public class TripServiceImpl implements TripService {
         // Apply itinerary update
         if (request.itinerary() != null) {
             trip.getItinerary().clear();
-            List<com.smart.service.entity.ItineraryItemEntity> newItinerary = tripMapper.mapItineraryRequestsToEntities(request.itinerary());
+            List<com.smart.service.entity.ItineraryItemEntity> newItinerary = tripMapper
+                    .mapItineraryRequestsToEntities(request.itinerary());
             newItinerary.forEach(item -> item.setTrip(trip));
             trip.getItinerary().addAll(newItinerary);
         }

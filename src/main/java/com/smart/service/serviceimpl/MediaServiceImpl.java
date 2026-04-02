@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
@@ -21,8 +22,7 @@ public class MediaServiceImpl implements MediaService {
         try {
             Map data = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "folder", "soksabay/" + folder,
-                    "resource_type", "auto"
-            ));
+                    "resource_type", "auto"));
             return data;
         } catch (IOException e) {
             throw new RuntimeException("Image upload failed: " + e.getMessage());

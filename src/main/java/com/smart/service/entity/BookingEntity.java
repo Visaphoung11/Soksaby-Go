@@ -37,4 +37,6 @@ public class BookingEntity {
     private BookingStatus status = BookingStatus.PENDING;
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    private String rejectionReason;
 }

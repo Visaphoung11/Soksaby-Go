@@ -13,6 +13,6 @@ public interface BookingService {
 
     // For Drivers
     List<BookingResponse> getIncomingRequests(Long driverId);
-    BookingResponse handleBookingResponse(Long bookingId, Long driverId, boolean accept);
+    BookingResponse handleBookingResponse(Long bookingId, Long driverId, boolean accept, String reason);
     BookingResponse cancelBooking(Long bookingId, UserEntity currentUser);
 }
