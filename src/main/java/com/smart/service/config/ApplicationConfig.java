@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.smart.service.entity.UserEntity;
 
 
 
@@ -24,11 +25,17 @@ public class ApplicationConfig {
         this.userRepository = userRepository;
     }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return userRepository::findByEmail;
-        // .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-    }
+@Bean
+public UserDetailsService userDetailsService() {
+    return username -> {
+        UserEntity user = userRepository.findByEmail(username);
+        if (user == null) {
+            // Spring MUST see this exception to handle the login flow correctly
+            throw new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found with email: " + username);
+        }
+        return user;
+    };
+}
 
     @SuppressWarnings("deprecation")
     @Bean

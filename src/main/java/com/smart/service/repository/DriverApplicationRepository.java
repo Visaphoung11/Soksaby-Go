@@ -16,4 +16,5 @@ public interface DriverApplicationRepository extends JpaRepository<DriverApplica
     Optional<DriverApplicationEntity> findByUserId(Long userId);
     // For Admin to filter PENDING applications
     List<DriverApplicationEntity> findByStatus(ApplicationStatus status);
+    Long countByStatus(String status); // For counting pending applications in Admin stats
 }
