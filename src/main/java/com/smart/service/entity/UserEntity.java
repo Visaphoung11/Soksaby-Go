@@ -59,6 +59,34 @@ public class UserEntity implements UserDetails {
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
 
+    // --- UserDetails Mandatory Methods ---
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonExpired() {
+        return true; // Tells Spring the account hasn't expired
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonLocked() {
+        return true; // Tells Spring the account isn't locked
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isCredentialsNonExpired() {
+        return true; // Tells Spring the password isn't expired
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isEnabled() {
+        // If your new 'status' field is null in the DB, this might cause issues.
+        // For now, return true to get your login working again.
+        return true; 
+    }
+
     // Many-to-Many relationship with the 'role' table via 'user_role' join table
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
