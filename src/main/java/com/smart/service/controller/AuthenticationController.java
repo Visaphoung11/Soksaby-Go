@@ -1,10 +1,10 @@
 package com.smart.service.controller;
 
-
 import com.smart.service.dtoRequest.AuthenticationRequest;
 import com.smart.service.dtoRequest.RegisterUserRequest;
 import com.smart.service.dtoRequest.RoleAssignRequest;
 import com.smart.service.dtoResponse.APIsResponse;
+import com.smart.service.dtoResponse.AuthenticationResponse;
 import com.smart.service.exception.BadRequestException;
 import com.smart.service.repository.UserRepository;
 import com.smart.service.service.AuthenticationService;
@@ -22,7 +22,6 @@ import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/v1/auth-service")
-
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
@@ -34,42 +33,53 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<APIsResponse<?>> register(@RequestBody RegisterUserRequest registerDto,
-                                                    HttpServletResponse response)
-    {
-        // Check duplicate email → throw BadRequestException (400)
+    public ResponseEntity<APIsResponse<?>> register(
+            @RequestBody RegisterUserRequest registerDto,
+            HttpServletResponse response) {
+
         if (userRepository.existsByEmail(registerDto.getEmail())) {
             throw new BadRequestException("User with email already exists");
         }
 
-        //  Call service normally, no try/catch needed
         APIsResponse<?> apiResponse = authenticationService.register(registerDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse); // 201 Created
+        String token = apiResponse.getAccessToken();
+        if (token != null) {
+            setJwtCookie(response, token);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
     @PostMapping("/assign-role")
     public ResponseEntity<APIsResponse<?>> assignRole(@RequestBody RoleAssignRequest request) {
-        //  service throws ResourceNotFoundException or BadRequestException as needed
-        APIsResponse<?> response = authenticationService.assignRoleToUser(request);
-        return ResponseEntity.ok(response); // 200 OK
+        APIsResponse<?> response = authenticationService.assignRoleToUser(request); // FIXED
+        return ResponseEntity.ok(response);
     }
-
 
     @PostMapping("/authenticate")
-    public ResponseEntity<APIsResponse<?>> authenticate(@RequestBody AuthenticationRequest request,
-                                                        HttpServletResponse response)
-    {
-        // service will throw UnauthorizedException for invalid credentials
+    public ResponseEntity<APIsResponse<?>> authenticate(
+            @RequestBody AuthenticationRequest request,
+            HttpServletResponse response) {
+
         APIsResponse<?> apiResponse = authenticationService.authenticate(request);
-        return ResponseEntity.ok(apiResponse); // 200 OK
+
+        AuthenticationResponse authData = (AuthenticationResponse) apiResponse.getData();
+        String token = authData.getAccessToken();
+
+        setJwtCookie(response, token);
+
+        return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping("/ws-token")
-    public ResponseEntity<APIsResponse<?>> getWsToken(@AuthenticationPrincipal UserEntity user) {
+    @GetMapping("/ws-token") // ADDED mapping
+    public ResponseEntity<APIsResponse<?>> getWsToken(
+            @AuthenticationPrincipal UserEntity user) {
+
         if (user == null) {
             throw new UnauthorizedException("User not authenticated");
         }
+
         APIsResponse<?> response = authenticationService.getWsToken(user);
         return ResponseEntity.ok(response);
     }
@@ -77,13 +87,12 @@ public class AuthenticationController {
     private void setJwtCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from("jwt_token", token)
                 .httpOnly(true)
-                .secure(false) // true in HTTPS prod
-                .sameSite("Lax") // or None + secure=true for cross-site HTTPS
+                .secure(true)
+                .sameSite("Lax")
                 .path("/")
                 .maxAge(Duration.ofDays(7))
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
-
 }
